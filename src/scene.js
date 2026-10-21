@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { cameraPoseAt, finalePoseAt, FINALE_DURATION } from './cinematography.js';
 
 // Everything in this scene is built with geometry: no stock footage or 2D character cut-outs.
 export function createScene(canvas, options = {}) {
@@ -17,12 +18,10 @@ export function createScene(canvas, options = {}) {
   scene.background = new THREE.Color(0x09131e);
   scene.fog = new THREE.FogExp2(0x0c1922, 0.035);
   const camera = new THREE.PerspectiveCamera(small ? 51 : 44, innerWidth / innerHeight, .1, 120);
-  const camStart = new THREE.Vector3(small ? .35 : .55, small ? 3.15 : 3.55, small ? 11.4 : 11.8);
-  const lookStart = new THREE.Vector3(small ? 0 : -.3, small ? .22 : 1.45, 0);
-  const camEnd = new THREE.Vector3(1.3, 2.64, 5.1);
-  const lookEnd = new THREE.Vector3(1.22, 2.11, .1);
-  camera.position.copy(camStart);
-  camera.lookAt(lookStart);
+  let mobileViewport = innerWidth <= 700;
+  const initialPose = cameraPoseAt(0, mobileViewport);
+  camera.position.fromArray(initialPose.eye);
+  camera.lookAt(new THREE.Vector3().fromArray(initialPose.look));
 
   scene.add(new THREE.HemisphereLight(0x8cb0d4, 0x202118, 1.12));
   const moonlight = new THREE.DirectionalLight(0x9fbee3, 2.25);
@@ -174,13 +173,51 @@ export function createScene(canvas, options = {}) {
   }
   glow(fire, 0, .78, 0, 3.75, 0xff8c41, .78);
   glow(fire, 0, .32, .04, 2.5, 0xffcf82, .52);
-  const flameMaterials = [0xff993e, 0xffb95a, 0xffd57d, 0xff7c35].map(color => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .73, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  // Semi-transparent shader sheets create flowing flame tongues instead of stiff cones.
+  const flameVertex = `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `;
+  const flameFragment = `
+    precision mediump float;
+    varying vec2 vUv;
+    uniform float uTime;
+    uniform float uSeed;
+    uniform float uOpacity;
+    void main() {
+      float h = vUv.y;
+      float wind = sin(h * 5.8 + uTime * 2.5 + uSeed) * (.03 + h * .12);
+      wind += sin(h * 12.0 - uTime * 3.4 + uSeed * 1.7) * h * .025;
+      float width = mix(.40, .008, pow(h, .85));
+      float center = .5 + wind;
+      float edge = 1.0 - smoothstep(width * .62, width, abs(vUv.x - center));
+      float top = 1.0 - smoothstep(.82, 1.0, h);
+      float bottom = smoothstep(0.0, .12, h);
+      float flicker = .88 + .12 * sin(uTime * 12.0 + h * 10.0 + uSeed);
+      float a = edge * top * bottom * flicker * uOpacity;
+      vec3 red = vec3(1.0, .17, .04);
+      vec3 orange = vec3(1.0, .46, .13);
+      vec3 gold = vec3(1.0, .88, .48);
+      vec3 color = mix(red, orange, smoothstep(.0, .65, h));
+      color = mix(color, gold, pow(max(0.0, 1.0 - abs(vUv.x - center) / max(width, .005)), 3.0) * (1.0 - h) * .96);
+      gl_FragColor = vec4(color, max(0.0, a));
+    }
+  `;
   const flames = [];
-  for (let i = 0; i < 9; i++) {
-    const h = .95 + rng() * 1.15;
-    const flame = mesh(new THREE.ConeGeometry(.22 + rng() * .17, h, 5, 5), flameMaterials[i % 4], fire, (rng() - .5) * .6, .36 + h * .4, (rng() - .5) * .44);
-    flame.rotation.z = (rng() - .5) * .26;
-    flames.push({ item: flame, base: flame.position.clone(), speed: 3.2 + rng() * 3, offset: rng() * 11, height: h });
+  for (let i = 0; i < (small ? 7 : 11); i++) {
+    const h = 1.14 + rng() * 1.14;
+    const material = new THREE.ShaderMaterial({
+      uniforms: { uTime: { value: 0 }, uSeed: { value: rng() * 100 }, uOpacity: { value: .6 } },
+      vertexShader: flameVertex, fragmentShader: flameFragment,
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+    });
+    const flame = mesh(new THREE.PlaneGeometry(.78 + rng() * .38, h, 1, 1), material,
+      fire, (rng() - .5) * .4, .3 + h * .42, (rng() - .5) * .37);
+    flame.rotation.y = (i / 11) * Math.PI;
+    flames.push({ item: flame, base: flame.position.clone(), speed: 2.2 + rng() * 2, offset: rng() * 11, height: h });
     flame.castShadow = false;
   }
   const sparkG = new THREE.Group(); fire.add(sparkG);
@@ -237,8 +274,9 @@ export function createScene(canvas, options = {}) {
   ball(headPivot, skin, .37, -.02, 0, .08, .13, .1);
   // Each eye and brow faces toward the front of the viewer, with a small downward gaze.
   const eyes = mat(0x302626);
+  const eyeMeshes = [];
   for (const sign of [-1, 1]) {
-    ball(headPivot, eyes, sign * .146, -.07, .336, .028, .027, .012);
+    eyeMeshes.push(ball(headPivot, eyes, sign * .146, -.07, .336, .028, .027, .012));
     const brow = mesh(new THREE.CapsuleGeometry(.014, .065, 2, 5), hair, headPivot, sign * .15, .03, .327);
     brow.rotation.z = Math.PI / 2 + sign * .09;
   }
@@ -279,21 +317,27 @@ export function createScene(canvas, options = {}) {
   }
 
   let playing = false, finaleStart = 0, finaleDone = false, active = true, frame = 0;
+  let storyTime = 0, prevFrameTime = 0, finaleOrigin = null;
   const clock = new THREE.Clock();
-  const currentLook = lookStart.clone();
-  function ease(t) { return t * t * (3 - 2 * t); }
+  const currentLook = new THREE.Vector3().fromArray(initialPose.look);
+  const targetEye = new THREE.Vector3();
+  const targetLook = new THREE.Vector3();
   function update() {
     if (!active) return;
     const t = clock.getElapsedTime();
-    const movement = reduced ? .2 : 1;
-    const f = Math.min(1, Math.max(0, (t - finaleStart) / 5));
-    const e = finaleStart ? ease(f) : 0;
+    const movement = reduced ? .15 : 1;
+    const delta = Math.min(.07, Math.max(.001, t - prevFrameTime));
+    prevFrameTime = t;
+    const elapsedFinale = finaleStart ? Math.max(0, t - finaleStart) : 0;
+    const stage = finaleStart ? finalePoseAt(finaleOrigin, elapsedFinale, mobileViewport) : null;
+    const e = stage ? stage.lookUpAmount : 0;
     fireLight.intensity = 53 + (Math.sin(t * 11) * 9 + Math.sin(t * 19) * 5) * movement;
     for (const p of flames) {
       p.item.position.x = p.base.x + Math.sin(t * p.speed + p.offset) * .115 * movement;
       p.item.scale.y = 1 + (.18 * Math.sin(t * p.speed * .8 + p.offset) * movement);
       p.item.rotation.z = Math.sin(t * 2.8 + p.offset) * .12 * movement;
-      p.item.material.opacity = .66 + Math.sin(t * 4 + p.offset) * .12;
+      p.item.material.uniforms.uTime.value = t;
+      p.item.material.uniforms.uOpacity.value = .57 + Math.sin(t * 4 + p.offset) * .15;
     }
     for (const spark of sparks) {
       const u = (t * spark.speed * .31 + spark.seed) % 1;
@@ -323,16 +367,30 @@ export function createScene(canvas, options = {}) {
       boy.position.y = .02 + Math.sin(t * 1.55) * .015;
       chest.rotation.x = Math.sin(t * 1.55) * .015;
     }
-    headPivot.rotation.x = .30 + (-.52 * e) + Math.sin(t * 1.25) * .025 * movement;
-    headPivot.rotation.y = -.12 + .12 * e;
-    boy.rotation.y = .02 - .13 * e;
-    const drift = Math.sin(t * .13) * .13 * movement;
-    camera.position.lerpVectors(camStart, camEnd, e);
-    camera.position.x += drift * (1 - e);
-    camera.position.y += Math.sin(t * .2) * .06 * movement * (1 - e);
-    currentLook.lerpVectors(lookStart, lookEnd, e);
+    // The boy first watches the fire, glances away, then lifts his chin and meets the viewer.
+    const contemplation = Math.sin(storyTime * .14 + .7) * .09 * (1 - e);
+    headPivot.rotation.x = .30 - .54 * e + Math.sin(t * 1.25) * .019 * movement * (1 - e);
+    headPivot.rotation.y = -.48 + .48 * e + contemplation;
+    headPivot.position.y = 2.13 + .09 * e + Math.sin(t * 1.55) * .012 * movement;
+    boy.rotation.y = -.06 - .07 * e;
+    scarfTail.rotation.z = -.15 + Math.sin(t * 1.8) * .035 * movement;
+    // Blinks become less frequent during the final moment.
+    const blinkWave = Math.pow(Math.max(0, Math.sin(t * .8 + .25)), 38) * (1 - .6 * e);
+    for (const eye of eyeMeshes) eye.scale.y = Math.max(.12, 1 - blinkWave * .88);
+    const pose = stage ? stage.camera : cameraPoseAt(reduced ? 0 : storyTime, mobileViewport);
+    targetEye.fromArray(pose.eye);
+    targetLook.fromArray(pose.look);
+    if (!finaleStart && !reduced) {
+      targetEye.x += Math.sin(t * .16) * .085;
+      targetEye.y += Math.sin(t * .21) * .045;
+    }
+    const smoothFactor = 1 - Math.exp(-delta * (finaleStart ? 3.1 : 1.15));
+    camera.position.lerp(targetEye, smoothFactor);
+    currentLook.lerp(targetLook, smoothFactor);
+    camera.fov += (pose.fov - camera.fov) * smoothFactor;
+    camera.updateProjectionMatrix();
     camera.lookAt(currentLook);
-    if (finaleStart && !finaleDone && f >= 1) {
+    if (finaleStart && !finaleDone && elapsedFinale >= FINALE_DURATION) {
       finaleDone = true;
       if (typeof options.onFinaleReady === 'function') options.onFinaleReady();
     }
@@ -343,9 +401,10 @@ export function createScene(canvas, options = {}) {
   }
   renderer.setAnimationLoop(update);
   function resize() {
-    const w = innerWidth, h = innerHeight, mobile = w <= 700;
+    const w = innerWidth, h = innerHeight;
+    mobileViewport = w <= 700;
     camera.aspect = w / h;
-    camera.fov = mobile ? 51 : 44;
+    camera.fov = cameraPoseAt(storyTime, mobileViewport).fov;
     camera.updateProjectionMatrix();
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobile ? 1.35 : 1.7));
     renderer.setSize(w, h, false);
@@ -353,8 +412,15 @@ export function createScene(canvas, options = {}) {
   addEventListener('resize', resize);
   return {
     setPlaying(value) { playing = !!value; },
-    finale() { if (!finaleStart) { finaleStart = clock.getElapsedTime() || .001; playing = false; } },
-    reset() { finaleStart = 0; finaleDone = false; playing = false; },
+    setMusicTime(seconds) { if (Number.isFinite(seconds)) storyTime = Math.max(0, seconds); },
+    finale() {
+      if (!finaleStart) {
+        finaleOrigin = { eye: camera.position.toArray(), look: currentLook.toArray(), fov: camera.fov };
+        finaleStart = clock.getElapsedTime() || .001;
+        playing = false;
+      }
+    },
+    reset() { finaleStart = 0; finaleOrigin = null; finaleDone = false; playing = false; storyTime = 0; },
     dispose() { active = false; renderer.setAnimationLoop(null); removeEventListener('resize', resize); renderer.dispose(); }
   };
 }
