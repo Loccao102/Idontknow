@@ -268,7 +268,7 @@ export function createScene(canvas, options = {}) {
   const scarfTail = mesh(new THREE.BoxGeometry(.16, .46, .09), scarf, boy, -.16, 1.58, .27);
   scarfTail.rotation.z = -.15;
   const headPivot = new THREE.Group(); headPivot.position.set(0, 2.13, .06); boy.add(headPivot);
-  headPivot.rotation.x = .30;
+  headPivot.rotation.x = .22;
   const head = ball(headPivot, skin, 0, 0, 0, .37, .44, .37);
   ball(headPivot, skin, -.37, -.02, 0, .08, .13, .1);
   ball(headPivot, skin, .37, -.02, 0, .08, .13, .1);
@@ -276,13 +276,16 @@ export function createScene(canvas, options = {}) {
   const eyes = mat(0x302626);
   const eyeMeshes = [];
   for (const sign of [-1, 1]) {
-    eyeMeshes.push(ball(headPivot, eyes, sign * .146, -.07, .336, .028, .027, .012));
+    eyeMeshes.push(ball(headPivot, eyes, sign * .146, -.07, .336, .023, .023, .011));
     const brow = mesh(new THREE.CapsuleGeometry(.014, .065, 2, 5), hair, headPivot, sign * .15, .03, .327);
     brow.rotation.z = Math.PI / 2 + sign * .09;
   }
   ball(headPivot, mat(0xb77f68), 0, -.13, .358, .055, .065, .075);
-  const mouth = mesh(new THREE.TorusGeometry(.065, .008, 4, 15, Math.PI), mat(0x88584f), headPivot, 0, -.233, .312);
-  mouth.rotation.z = Math.PI;
+  // A subtle resting mouth: a flat line, deliberately NOT a smile in the close-up.
+  const mouth = mesh(new THREE.CapsuleGeometry(.009, .046, 3, 8), mat(0x795b52), headPivot, 0, -.238, .341);
+  mouth.rotation.z = Math.PI / 2;
+  mouth.rotation.x = -.06;
+  mouth.castShadow = false;
   ball(headPivot, hair, 0, .34, -.09, .39, .225, .38);
   for (let i = 0; i < 7; i++) {
     const px = -.31 + i * .105;
@@ -302,52 +305,18 @@ export function createScene(canvas, options = {}) {
   heartShape.bezierCurveTo(.48, -.10, .07, -.34, 0, -.42);
   const heartMat = new THREE.MeshStandardMaterial({ color: 0xf36b68, emissive: 0xb93c3c, emissiveIntensity: 2.5, transparent: true, opacity: .94, roughness: .4 });
   const heart = mesh(new THREE.ExtrudeGeometry(heartShape, { depth: .12, bevelEnabled: true, bevelThickness: .09, bevelSize: .05, bevelSegments: 2, steps: 1 }), heartMat, boy, .04, 1.53, .52);
-  heart.scale.setScalar(.29);
+  heart.scale.setScalar(.26);
   heart.castShadow = false;
-  const heartGlow = glow(boy, .04, 1.53, .54, 1.4, 0xff6666, .45);
+  const heartGlow = glow(boy, .04, 1.53, .54, 1.13, 0xff6666, .24);
   const heartLight = new THREE.PointLight(0xf26862, 4.5, 2, 2);
   heartLight.position.set(.04, 1.53, .72);
   boy.add(heartLight);
 
   const fireflies = [];
-  for (let i = 0; i < (small ? 20 : 37); i++) {
+  for (let i = 0; i < (small ? 5 : 9); i++) {
     const x = (rng() - .5) * 11, y = .7 + rng() * 4.4, z = (rng() - .5) * 10;
     const p = glow(scene, x, y, z, .09 + rng() * .11, i % 3 ? 0xffad63 : 0xa9d3c5, .23 + rng() * .5);
     fireflies.push({ mesh: p, x, y, z, speed: .3 + rng(), phase: rng() * 6.28 });
-  }
-
-  // Tiny translucent hearts drift out of the warm light during the emotional middle act.
-  // Deliberately subtle: the character and fire stay central to the story.
-  const heartCanvas = document.createElement('canvas');
-  heartCanvas.width = heartCanvas.height = 128;
-  const hctx = heartCanvas.getContext('2d');
-  const shade = hctx.createRadialGradient(64, 60, 7, 64, 60, 60);
-  shade.addColorStop(0, 'rgba(255,195,166,.33)');
-  shade.addColorStop(1, 'rgba(255,170,130,0)');
-  hctx.fillStyle = shade;
-  hctx.fillRect(0, 0, 128, 128);
-  hctx.save();
-  hctx.translate(64, 70);
-  hctx.fillStyle = 'rgba(255,170,153,.75)';
-  hctx.beginPath();
-  hctx.moveTo(0, 30);
-  hctx.bezierCurveTo(-13, 18, -37, -2, -28, -21);
-  hctx.bezierCurveTo(-19, -42, -2, -30, 0, -20);
-  hctx.bezierCurveTo(2, -30, 19, -42, 28, -21);
-  hctx.bezierCurveTo(37, -2, 13, 18, 0, 30);
-  hctx.fill();
-  hctx.restore();
-  const loveTexture = new THREE.CanvasTexture(heartCanvas);
-  const floatingHearts = [];
-  for (let i = 0; i < (small ? 11 : 21); i++) {
-    const seed = rng();
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: loveTexture, transparent: true, opacity: 0,
-      depthWrite: false, blending: THREE.AdditiveBlending
-    }));
-    sprite.scale.setScalar(.16 + rng() * .16);
-    scene.add(sprite);
-    floatingHearts.push({ sprite, seed, lateral: rng() * Math.PI * 2, speed: .06 + rng() * .06 });
   }
 
   let playing = false, finaleStart = 0, finaleDone = false, active = true, frame = 0;
@@ -365,7 +334,7 @@ export function createScene(canvas, options = {}) {
     const elapsedFinale = finaleStart ? Math.max(0, t - finaleStart) : 0;
     const stage = finaleStart ? finalePoseAt(finaleOrigin, elapsedFinale, mobileViewport) : null;
     const e = stage ? stage.lookUpAmount : 0;
-    fireLight.intensity = 53 + (Math.sin(t * 11) * 9 + Math.sin(t * 19) * 5) * movement;
+    fireLight.intensity = 48 + (Math.sin(t * 7) * 5 + Math.sin(t * 13) * 3) * movement;
     for (const p of flames) {
       p.item.position.x = p.base.x + Math.sin(t * p.speed + p.offset) * .115 * movement;
       p.item.scale.y = 1 + (.18 * Math.sin(t * p.speed * .8 + p.offset) * movement);
@@ -389,49 +358,37 @@ export function createScene(canvas, options = {}) {
       fly.mesh.position.set(fly.x + Math.sin(t * fly.speed + fly.phase) * .28 * movement, fly.y + Math.cos(t * (fly.speed * .62) + fly.phase) * .31 * movement, fly.z);
       fly.mesh.material.opacity = (.23 + .3 * (1 + Math.sin(t * 1.7 + fly.phase)) / 2);
     }
-    const heartEntrance = Math.max(0, Math.min(1, (storyTime - 74) / 22));
-    const heartExit = 1 - Math.max(0, Math.min(1, (storyTime - 152) / 16));
-    const atmosphere = heartEntrance * heartExit * (finaleStart ? 0 : 1);
-    for (const h of floatingHearts) {
-      const age = (storyTime * h.speed + h.seed) % 1;
-      h.sprite.position.set(
-        1.33 + Math.sin(h.lateral + age * 3) * (.25 + age * .9),
-        1.37 + age * 2.25,
-        .52 + Math.cos(h.lateral + age * 2) * (.15 + age * .6)
-      );
-      h.sprite.material.opacity = atmosphere * Math.sin(age * Math.PI) * .25;
-      h.sprite.rotation.z = Math.sin(h.lateral + age * 4) * .28;
-    }
     // Two pulses close together suggest a human heartbeat.
     const beat = Math.pow(Math.max(0, Math.sin(t * 7.1)), 18) + .56 * Math.pow(Math.max(0, Math.sin(t * 7.1 - .98)), 20);
     const hb = Math.min(1.4, beat) * (playing ? 1 : .55);
-    const pulse = 1 + hb * .18;
-    heart.scale.setScalar(.29 * pulse);
-    heartGlow.scale.setScalar(1.32 + hb * .56);
-    heartGlow.material.opacity = .38 + hb * .28;
-    heartLight.intensity = 3.5 + hb * 4;
+    const pulse = 1 + hb * .115;
+    heart.scale.setScalar(.26 * pulse);
+    heartGlow.scale.setScalar(1.13 + hb * .26);
+    heartGlow.material.opacity = .21 + hb * .16;
+    heartLight.intensity = 2.1 + hb * 2.2;
     if (!reduced) {
-      boy.position.y = .02 + Math.sin(t * 1.55) * .015;
-      chest.rotation.x = Math.sin(t * 1.55) * .015;
+      boy.position.y = .02 + Math.sin(t * 1.32) * .006;
+      chest.rotation.x = Math.sin(t * 1.32) * .009;
     }
     // The boy first watches the fire, glances away, then lifts his chin and meets the viewer.
-    const contemplation = Math.sin(storyTime * .14 + .7) * .09 * (1 - e);
-    headPivot.rotation.x = .30 - .54 * e + Math.sin(t * 1.25) * .019 * movement * (1 - e);
-    headPivot.rotation.y = -.48 + .48 * e + contemplation;
-    headPivot.position.y = 2.13 + .09 * e + Math.sin(t * 1.55) * .012 * movement;
-    boy.rotation.y = -.06 - .07 * e;
-    scarfTail.rotation.z = -.15 + Math.sin(t * 1.8) * .035 * movement;
+    const contemplation = Math.sin(storyTime * .08 + .7) * .045 * (1 - e);
+    // Keep the expression restrained: gentle look-up, tiny sidelong glance, no direct stare.
+    headPivot.rotation.x = .22 - .205 * e + Math.sin(t * 1.1) * .007 * movement * (1 - e);
+    headPivot.rotation.y = -.22 + .14 * e + contemplation * .28;
+    headPivot.position.y = 2.13 + .026 * e + Math.sin(t * 1.55) * .008 * movement;
+    boy.rotation.y = -.02 - .02 * e;
+    scarfTail.rotation.z = -.15 + Math.sin(t * 1.8) * .018 * movement;
     // Blinks become less frequent during the final moment.
-    const blinkWave = Math.pow(Math.max(0, Math.sin(t * .8 + .25)), 38) * (1 - .6 * e);
-    for (const eye of eyeMeshes) eye.scale.y = .027 * Math.max(.12, 1 - blinkWave * .88);
+    const blinkWave = Math.pow(Math.max(0, Math.sin(t * .77 + .25)), 44) * (1 - .72 * e);
+    for (const eye of eyeMeshes) eye.scale.y = .023 * Math.max(.35, 1 - blinkWave * .6);
     const pose = stage ? stage.camera : cameraPoseAt(reduced ? 0 : storyTime, mobileViewport);
     targetEye.fromArray(pose.eye);
     targetLook.fromArray(pose.look);
     if (!finaleStart && !reduced) {
-      targetEye.x += Math.sin(t * .16) * .085;
-      targetEye.y += Math.sin(t * .21) * .045;
+      targetEye.x += Math.sin(t * .11) * .022;
+      targetEye.y += Math.sin(t * .16) * .015;
     }
-    const smoothFactor = 1 - Math.exp(-delta * (finaleStart ? 3.1 : 1.15));
+    const smoothFactor = 1 - Math.exp(-delta * (finaleStart ? 2.35 : 1.0));
     camera.position.lerp(targetEye, smoothFactor);
     currentLook.lerp(targetLook, smoothFactor);
     camera.fov += (pose.fov - camera.fov) * smoothFactor;
