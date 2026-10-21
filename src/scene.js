@@ -376,7 +376,7 @@ export function createScene(canvas, options = {}) {
     scarfTail.rotation.z = -.15 + Math.sin(t * 1.8) * .035 * movement;
     // Blinks become less frequent during the final moment.
     const blinkWave = Math.pow(Math.max(0, Math.sin(t * .8 + .25)), 38) * (1 - .6 * e);
-    for (const eye of eyeMeshes) eye.scale.y = Math.max(.12, 1 - blinkWave * .88);
+    for (const eye of eyeMeshes) eye.scale.y = .027 * Math.max(.12, 1 - blinkWave * .88);
     const pose = stage ? stage.camera : cameraPoseAt(reduced ? 0 : storyTime, mobileViewport);
     targetEye.fromArray(pose.eye);
     targetLook.fromArray(pose.look);
