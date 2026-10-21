@@ -316,6 +316,40 @@ export function createScene(canvas, options = {}) {
     fireflies.push({ mesh: p, x, y, z, speed: .3 + rng(), phase: rng() * 6.28 });
   }
 
+  // Tiny translucent hearts drift out of the warm light during the emotional middle act.
+  // Deliberately subtle: the character and fire stay central to the story.
+  const heartCanvas = document.createElement('canvas');
+  heartCanvas.width = heartCanvas.height = 128;
+  const hctx = heartCanvas.getContext('2d');
+  const shade = hctx.createRadialGradient(64, 60, 7, 64, 60, 60);
+  shade.addColorStop(0, 'rgba(255,195,166,.33)');
+  shade.addColorStop(1, 'rgba(255,170,130,0)');
+  hctx.fillStyle = shade;
+  hctx.fillRect(0, 0, 128, 128);
+  hctx.save();
+  hctx.translate(64, 70);
+  hctx.fillStyle = 'rgba(255,170,153,.75)';
+  hctx.beginPath();
+  hctx.moveTo(0, 30);
+  hctx.bezierCurveTo(-13, 18, -37, -2, -28, -21);
+  hctx.bezierCurveTo(-19, -42, -2, -30, 0, -20);
+  hctx.bezierCurveTo(2, -30, 19, -42, 28, -21);
+  hctx.bezierCurveTo(37, -2, 13, 18, 0, 30);
+  hctx.fill();
+  hctx.restore();
+  const loveTexture = new THREE.CanvasTexture(heartCanvas);
+  const floatingHearts = [];
+  for (let i = 0; i < (small ? 11 : 21); i++) {
+    const seed = rng();
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: loveTexture, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    sprite.scale.setScalar(.16 + rng() * .16);
+    scene.add(sprite);
+    floatingHearts.push({ sprite, seed, lateral: rng() * Math.PI * 2, speed: .06 + rng() * .06 });
+  }
+
   let playing = false, finaleStart = 0, finaleDone = false, active = true, frame = 0;
   let storyTime = 0, prevFrameTime = 0, finaleOrigin = null;
   const clock = new THREE.Clock();
@@ -354,6 +388,19 @@ export function createScene(canvas, options = {}) {
     for (const fly of fireflies) {
       fly.mesh.position.set(fly.x + Math.sin(t * fly.speed + fly.phase) * .28 * movement, fly.y + Math.cos(t * (fly.speed * .62) + fly.phase) * .31 * movement, fly.z);
       fly.mesh.material.opacity = (.23 + .3 * (1 + Math.sin(t * 1.7 + fly.phase)) / 2);
+    }
+    const heartEntrance = Math.max(0, Math.min(1, (storyTime - 74) / 22));
+    const heartExit = 1 - Math.max(0, Math.min(1, (storyTime - 152) / 16));
+    const atmosphere = heartEntrance * heartExit * (finaleStart ? 0 : 1);
+    for (const h of floatingHearts) {
+      const age = (storyTime * h.speed + h.seed) % 1;
+      h.sprite.position.set(
+        1.33 + Math.sin(h.lateral + age * 3) * (.25 + age * .9),
+        1.37 + age * 2.25,
+        .52 + Math.cos(h.lateral + age * 2) * (.15 + age * .6)
+      );
+      h.sprite.material.opacity = atmosphere * Math.sin(age * Math.PI) * .25;
+      h.sprite.rotation.z = Math.sin(h.lateral + age * 4) * .28;
     }
     // Two pulses close together suggest a human heartbeat.
     const beat = Math.pow(Math.max(0, Math.sin(t * 7.1)), 18) + .56 * Math.pow(Math.max(0, Math.sin(t * 7.1 - .98)), 20);
