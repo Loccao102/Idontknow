@@ -1,0 +1,20 @@
+name: Validate static story
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check src/scene.js
+          node --check src/music.js
+          node --check src/main.js
+          node --check src/config.js
+      - name: Run tests
+        run: npm test
