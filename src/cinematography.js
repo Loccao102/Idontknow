@@ -1,27 +1,24 @@
 // Deterministic, audio-driven camera direction (seconds, world units).
 // No render-time timers: pausing or seeking the song does not desynchronize the shot.
 export const CAMERA_KEYS = {
+  // Three deliberate beats, not a constant orbit around the character.
   desktop: [
-    { at: 0,  eye: [.55, 3.55, 11.8], look: [-.3, 1.45, 0], fov: 44 },
-    { at: 35, eye: [-1.25, 3.2, 10.1], look: [-.1, 1.58, 0], fov: 41 },
-    { at: 76, eye: [2.65, 2.75, 8.4], look: [1, 1.65, -.1], fov: 40 },
-    { at: 113, eye: [1.75, 2.55, 7.4], look: [.95, 1.67, .05], fov: 39 },
-    { at: 150, eye: [.7, 3.25, 9.2], look: [.3, 1.55, 0], fov: 43 },
-    { at: 169, eye: [.7, 3.25, 9.2], look: [.3, 1.55, 0], fov: 43 }
+    { at: 0, eye: [.35, 3.35, 11.4], look: [0, 1.45, 0], fov: 44 },
+    { at: 72, eye: [.85, 3.05, 9.55], look: [.55, 1.55, 0], fov: 42 },
+    { at: 142, eye: [1.05, 2.9, 7.1], look: [.9, 1.72, 0], fov: 39 },
+    { at: 169, eye: [1.05, 2.9, 7.1], look: [.9, 1.72, 0], fov: 39 }
   ],
   mobile: [
-    { at: 0, eye: [.35, 3.15, 11.4], look: [0, .72, 0], fov: 51 },
-    { at: 35, eye: [-.65, 3.15, 10.4], look: [0, 1.05, 0], fov: 51 },
-    { at: 76, eye: [1.75, 2.75, 9], look: [.75, 1.5, 0], fov: 51 },
-    { at: 113, eye: [1.55, 2.65, 8], look: [1, 1.68, 0], fov: 49 },
-    { at: 150, eye: [.55, 3.1, 10], look: [.2, 1.35, 0], fov: 51 },
-    { at: 169, eye: [.55, 3.1, 10], look: [.2, 1.35, 0], fov: 51 }
+    { at: 0, eye: [.25, 3.15, 11.2], look: [0, 1.15, 0], fov: 51 },
+    { at: 72, eye: [.75, 3, 9.9], look: [.45, 1.35, 0], fov: 50 },
+    { at: 142, eye: [.95, 2.88, 7.8], look: [.85, 1.58, 0], fov: 47 },
+    { at: 169, eye: [.95, 2.88, 7.8], look: [.85, 1.58, 0], fov: 47 }
   ]
 };
-export const FINALE_DURATION = 6.2;
+export const FINALE_DURATION = 5.8;
 export const FINALE_POSE = {
-  desktop: { eye: [1.33, 2.85, 5.45], look: [1.27, 2.11, 0], fov: 37 },
-  mobile: { eye: [1.35, 2.87, 6.15], look: [1.27, 2.11, 0], fov: 45 }
+  desktop: { eye: [1.28, 2.82, 5.65], look: [1.15, 2.02, 0], fov: 37 },
+  mobile: { eye: [1.28, 2.82, 6.1], look: [1.12, 1.95, 0], fov: 44 }
 };
 export function clamp01(value) { return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0)); }
 export function smooth(value) { const x = clamp01(value); return x * x * (3 - 2 * x); }
@@ -47,6 +44,6 @@ export function finalePoseAt(origin, elapsed, mobile = false) {
   const target = FINALE_POSE[mobile ? 'mobile' : 'desktop'];
   // Lifting the head starts later than the camera movement.
   const cameraAmount = smooth(elapsed / FINALE_DURATION);
-  const lookUpAmount = smooth((elapsed - 1.8) / 3.5);
+  const lookUpAmount = smooth((elapsed - 2.1) / 3.1);
   return { camera: interpolatePose(origin, target, cameraAmount), lookUpAmount, cameraAmount };
 }
