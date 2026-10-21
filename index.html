@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090f18">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Một đêm bên lửa, một trái tim và những lời chưa nói.">
+  <title>From The Start — A little story for you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/styles.css">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="world" aria-label="Khung cảnh 3D: chàng trai ngồi bên đống lửa dưới bầu trời đêm"></canvas>
+    <div class="sky-grain" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="edge-glow" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="wordmark" href="./" aria-label="Trở về đầu câu chuyện">
+        <span class="mark">✳</span>
+        <span>I DON'T KNOW<span class="brand-dot">.</span><small>but I think I do</small></span>
+      </a>
+      <div class="top-meta"><span class="live-dot"></span> A LITTLE STORY, JUST FOR YOU</div>
+      <button class="top-sound" id="sound-toggle" type="button" aria-label="Tắt hoặc bật âm thanh"><span id="sound-icon">♫</span><span id="sound-label">ÂM THANH BẬT</span></button>
+    </header>
+
+    <main>
+      <div class="left-rail" aria-hidden="true">
+        <span class="rail-label">CHAPTERS</span>
+        <div class="rail-track"><i id="rail-progress"></i></div>
+        <span id="chapter-number">01</span>
+      </div>
+
+      <div class="scene-copy" id="scene-copy" aria-live="polite">
+        <span class="eyebrow" id="scene-eyebrow">CHAPTER 01 / A QUIET NIGHT</span>
+        <h1 id="scene-title">Đêm nay,<br><em>tớ có điều muốn nói.</em></h1>
+        <p id="scene-subtitle">Một câu chuyện nhỏ, bên ánh lửa và những điều chưa kịp gọi thành tên.</p>
+      </div>
+      <div class="thought" id="thought" aria-live="polite"></div>
+
+      <aside class="music-panel" id="music-panel" aria-label="Trình phát bài hát và phần lời">
+        <div class="panel-topline"><span><span class="pulse-indicator"></span> THE SOUNDTRACK</span><span>✦ VOL. 01</span></div>
+        <div class="song-heading">
+          <div class="record" aria-hidden="true"><div class="record-disc"><span>♥</span></div></div>
+          <div><span class="music-overline">NOW PLAYING</span><h2>From The Start</h2><p>Laufey · just a little confession</p></div>
+        </div>
+        <div class="youtube-shell" id="youtube-shell">
+          <div id="yt-player"></div>
+          <div class="video-fallback" id="video-fallback">
+            <span>♪</span>
+            <p>Nhạc sẽ phát từ YouTube</p>
+            <a href="https://www.youtube.com/watch?v=rHvQakk1zMA" target="_blank" rel="noopener noreferrer">Mở trên YouTube ↗</a>
+          </div>
+        </div>
+        <div class="music-transport">
+          <button class="transport-btn" id="play-toggle" type="button" aria-label="Phát hoặc tạm dừng nhạc">▶</button>
+          <div class="transport-times"><span id="current-time">0:00</span><div class="track"><div class="track-fill" id="track-fill"></div></div><span id="duration">2:49</span></div>
+          <button class="transport-btn transport-replay" id="replay-song" type="button" aria-label="Nghe lại từ đầu">↺</button>
+        </div>
+        <div class="lyrics-box">
+          <div class="lyrics-heading"><span>♪ &nbsp; WORDS IN THE AIR</span><span class="tiny-stars">✧ ✦ ✧</span></div>
+          <div class="lyric-lines" aria-live="off">
+            <p id="lyric-prev" class="lyric-muted"></p>
+            <p id="lyric-current" class="lyric-current">Có vài điều… vẫn chưa thành lời.</p>
+            <p id="lyric-next" class="lyric-muted"></p>
+          </div>
+          <p class="lyric-caption" id="lyric-caption">Lời tâm sự minh hoạ · hỗ trợ đồng bộ lời bài hát qua file .lrc</p>
+        </div>
+        <div class="panel-bottom"><span>TAKE YOUR TIME, THE NIGHT IS OURS.</span><span>♡</span></div>
+      </aside>
+
+      <div class="intro" id="intro">
+        <div class="intro-card">
+          <span class="eyebrow">A STORY IN THREE ACTS · 01 / 03</span>
+          <h2>Thử ở lại<br><em>một chút nhé?</em></h2>
+          <p>Đeo tai nghe nếu có. Bắt đầu bằng một bài hát, rồi xem đêm nay sẽ dẫn mình tới đâu.</p>
+          <button class="primary-cta" id="start-btn" type="button"><span>Bắt đầu câu chuyện</span><span class="button-star">✦</span></button>
+          <span class="mini-note">Nhạc bắt đầu khi bạn nhấn phát · Không có gì vội cả</span>
+        </div>
+      </div>
+
+      <section class="finale" id="finale" aria-label="Lá thư cuối câu chuyện" aria-hidden="true">
+        <div class="finale-content">
+          <span class="eyebrow">CHAPTER 03 / THE THING I NEVER SAID</span>
+          <h2>À, còn một điều nữa…</h2>
+          <p>Hình như tớ để quên một thứ dành cho cậu.</p>
+          <button class="envelope-button" id="envelope-btn" type="button" aria-label="Mở lá thư">
+            <span class="envelope"><i class="env-back"></i><i class="env-note">for you<br>♡</i><i class="env-flap"></i><i class="env-front"></i><i class="wax-seal">♥</i></span>
+          </button>
+          <p class="tap-hint">CHẠM VÀO PHONG THƯ ĐỂ MỞ <span>↑</span></p>
+        </div>
+      </section>
+
+      <section class="letter-overlay" id="letter-overlay" role="dialog" aria-modal="true" aria-label="Lá thư gửi cậu" aria-hidden="true">
+        <div class="letter-sheet">
+          <button class="letter-close" id="letter-close" type="button" aria-label="Đóng thư">×</button>
+          <span class="letter-label">A LETTER, FROM THE START</span>
+          <div class="letter-star">✳</div>
+          <h2>Gửi cậu,</h2>
+          <p>Tớ đã nghĩ rất lâu về việc nên bắt đầu thế nào. Một câu thật khéo? Một lời đùa như mọi khi? Hay cứ giả vờ rằng tớ chẳng có gì muốn nói?</p>
+          <p>Nhưng có những điều càng để lâu lại càng khó giấu.</p>
+          <p class="letter-highlight">Tớ thích cậu.</p>
+          <p>Không phải vì một khoảnh khắc thật lớn lao. Mà là từ những điều nhỏ xíu khiến tớ bất giác mỉm cười mỗi khi nghĩ đến.</p>
+          <p>Cậu không cần trả lời ngay đâu. Tớ chỉ muốn có một lần đủ can đảm để nói điều này, bằng cách riêng của mình.</p>
+          <p>Và nếu cậu cũng muốn, mình cứ từ từ viết tiếp câu chuyện này nhé.</p>
+          <div class="signature">Từ một người hơi vụng về trong chuyện này <span>♡</span></div>
+          <button class="letter-again" id="restart-btn" type="button">↺ &nbsp; Xem lại từ đầu</button>
+        </div>
+      </section>
+
+      <footer class="bottom-bar">
+        <div class="bottom-caption"><span class="bottom-sparkle">✦</span><span id="bottom-message">SOME THINGS ARE WORTH SAYING, EVEN WHEN WE'RE SHY.</span></div>
+        <div class="bottom-actions">
+          <button class="text-action" id="skip-btn" type="button">Mở lá thư sớm <span>↗</span></button>
+          <button class="fullscreen-btn" id="fullscreen-btn" type="button" aria-label="Toàn màn hình">⛶</button>
+        </div>
+      </footer>
+    </main>
+    <div id="loading" class="loading"><span class="loading-star">✳</span><span>ĐANG THẮP MỘT NGỌN LỬA NHỎ…</span></div>
+    <div id="toast" class="toast" role="status"></div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
