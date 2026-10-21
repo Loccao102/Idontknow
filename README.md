@@ -33,10 +33,18 @@ The side captions are **original story captions**, not copyrighted song lyrics. 
 ## Structure
 - `index.html`: story UI, letter, YouTube panel.
 - `src/styles.css`: responsive cinematic UI and animated envelope.
-- `src/scene.js`: procedural forest, stars, 3D boy, campfire, sparks, heartbeat, camera animation.
+- `src/scene.js`: procedural forest, flowing shader campfire, blinking/breathing 3D boy, drifting hearts, heartbeat.
+- `src/cinematography.js`: continuous audio-directed camera keyframes (mobile + desktop), delayed head-raise on the closing shot.
 - `src/music.js`: YouTube / local audio timing and LRC rendering.
 - `src/main.js`: narrative state, events and scene transitions.
 - `src/config.js`: audio and lyrics configuration.
 - `assets/captions.lrc`: replaceable original captions.
 
 The source repo is public. Do not place private information or surprises you don't want indexed into this repo, even though the HTML includes a noindex directive.
+
+## Cinematic pacing and review
+The camera is directed by the soundtrack playback time: pausing and seeking changes the shot rather than the scene silently continuing. Shots drift around the campfire, then move towards the boy, hold on the heartbeat, and widen before the finale. The last ~6.2 seconds have two different beats: first the camera approaches, then the boy gradually lifts his head to face the viewer, and then the envelope appears. Small glowing heart particles gradually appear during the middle act and fade before the final letter.
+
+The boy is intentionally stylized and made of procedural 3D geometry, not a photorealistic human model. We still recommend visual QA in a desktop and mobile browser before sharing. GitHub Actions validates JavaScript syntax, caption parsing, camera interpolation, and continuity. YouTube may reject auto-play and/or embedding on some browsers; the viewer can use the embedded video controls, open the video on YouTube, or choose the manual letter reveal.
+
+To tune camera direction see `src/cinematography.js`; for shaders and body acting see `src/scene.js`; for story chapters see `src/main.js`.
