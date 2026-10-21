@@ -110,12 +110,12 @@ export function createScene(canvas, options = {}) {
     }
     return group;
   }
-  for (let i = 0; i < (small ? 65 : 110); i++) {
+  for (let i = 0; i < (small ? 40 : 75); i++) {
     const x = (rng() - .5) * 55, z = -6 - rng() * 32;
     if (Math.abs(x) < 5 && z > -9) continue;
     addPine(x, z, 2.6 + rng() * 7.2, treeDark[Math.floor(rng() * treeDark.length)]);
   }
-  for (let i = 0; i < 22; i++) {
+  for (let i = 0; i < 12; i++) {
     const x = (rng() - .5) * 33, z = 4 + rng() * 15;
     if (Math.abs(x) < 5 && z < 9) continue;
     addPine(x, z, 3 + rng() * 4.5, treeDark[Math.floor(rng() * 2)]);
@@ -125,7 +125,7 @@ export function createScene(canvas, options = {}) {
   moon.castShadow = false;
   glow(scene, -8, 10, -27, 3.6, 0xc2d3e5, .19);
   const starVerts = [], starColors = [];
-  for (let i = 0; i < 660; i++) {
+  for (let i = 0; i < 370; i++) {
     const x = (rng() - .5) * 86, y = 4 + rng() * 33, z = -26 - rng() * 49;
     starVerts.push(x, y, z);
     const c = new THREE.Color().setHSL(.58 + rng() * .12, .17, .42 + rng() * .35);
@@ -136,14 +136,14 @@ export function createScene(canvas, options = {}) {
   stGeo.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
   const stars = new THREE.Points(stGeo, new THREE.PointsMaterial({ size: .14, vertexColors: true, sizeAttenuation: true, transparent: true, opacity: .85, depthWrite: false }));
   scene.add(stars);
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 30; i++) {
     const x = (rng() - .5) * 13, z = (rng() - .5) * 13, d = Math.hypot(x + .2, z);
     if (d < 2 || d > 7) continue;
     const patch = ball(scene, mat(i % 2 ? 0x455344 : 0x344538), x, .015, z, .05 + rng() * .13, .08 + rng() * .19, .05 + rng() * .12);
     patch.castShadow = false;
     clearings.push(patch);
   }
-  for (let i = 0; i < 65; i++) {
+  for (let i = 0; i < 32; i++) {
     const x = (rng() - .5) * 14, z = (rng() - .5) * 12;
     if (Math.hypot(x + 1.4, z - .7) < 1.7) continue;
     const pebble = ball(scene, stone, x, .035, z, .06 + rng() * .15, .05, .08 + rng() * .1);
@@ -207,7 +207,7 @@ export function createScene(canvas, options = {}) {
     }
   `;
   const flames = [];
-  for (let i = 0; i < (small ? 7 : 11); i++) {
+  for (let i = 0; i < (small ? 6 : 9); i++) {
     const h = 1.14 + rng() * 1.14;
     const material = new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 }, uSeed: { value: rng() * 100 }, uOpacity: { value: .6 } },
@@ -222,13 +222,13 @@ export function createScene(canvas, options = {}) {
   }
   const sparkG = new THREE.Group(); fire.add(sparkG);
   const sparks = [];
-  for (let i = 0; i < (small ? 36 : 78); i++) {
+  for (let i = 0; i < (small ? 22 : 42); i++) {
     const p = glow(sparkG, 0, 0, 0, .09 + rng() * .16, 0xffa04e, .5 + rng() * .5);
     sparks.push({ mesh: p, seed: rng(), speed: .4 + rng() * 1.7, offset: rng() * 3.4, drift: (rng() - .5) * 1.3 });
   }
   const smokeMat = new THREE.MeshBasicMaterial({ color: 0x98a4a1, transparent: true, opacity: .05, depthWrite: false });
   const smoke = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 4; i++) {
     const p = ball(fire, smokeMat.clone(), 0, .5, 0, .3, .34, .3);
     p.castShadow = false;
     smoke.push({ mesh: p, phase: rng(), sway: (rng() - .5) * .6 });
