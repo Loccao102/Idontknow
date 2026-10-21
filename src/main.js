@@ -111,7 +111,7 @@ function endStory() {
   if (world) {
     world.setPlaying(false);
     world.finale();
-    finaleTimeout = setTimeout(showFinale, reduced ? 5300 : 6700);
+    finaleTimeout = setTimeout(showFinale, 7400);
   } else {
     showFinale();
   }
@@ -145,7 +145,10 @@ music = createMusic(STORY_CONFIG, {
   onPlay: () => { begin(false); if (world) world.setPlaying(true); },
   onPause: () => { if (world) world.setPlaying(false); },
   onEnded: endStory,
-  onTick: (time, duration, playing) => updateNarration(time),
+  onTick: (time, duration, playing) => {
+    if (world) world.setMusicTime(time);
+    updateNarration(time);
+  },
   onError: message => toast(message, 7000),
   onWait: () => toast('Đang kết nối YouTube. Nếu nhạc chưa phát, nhấn ▶ trên video hoặc trong khung nhạc.')
 });
