@@ -12,6 +12,7 @@ jobs:
           node-version: '22'
       - name: Check syntax
         run: |
+          node --check src/cinematography.js
           node --check src/scene.js
           node --check src/music.js
           node --check src/main.js
