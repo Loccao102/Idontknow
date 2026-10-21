@@ -1,0 +1,1 @@
+{"name":"idontknow-cinematic-story","private":true,"version":"1.0.0","type":"module","scripts":{"test":"node --test tests/*.test.mjs"},"description":"Cinematic campfire confession site for GitHub Pages; static Three.js and YouTube experience."}
