@@ -7,7 +7,6 @@ const app = $('app');
 const intro = $('intro');
 const finale = $('finale');
 const letter = $('letter-overlay');
-const thought = $('thought');
 const skip = $('skip-btn');
 const chapters = [
   {
@@ -35,20 +34,8 @@ const chapters = [
     description: 'Vì có một người thật sự xứng đáng được nghe điều ấy.'
   }
 ];
-const thoughts = [
-  { at: 10, text: 'Sao tự dưng lại nhớ đến cậu nhỉ…' },
-  { at: 29, text: '' },
-  { at: 47, text: 'Chỉ là một tin nhắn thôi mà…' },
-  { at: 66, text: '' },
-  { at: 83, text: 'Hình như có gì đó lạ lắm.' },
-  { at: 101, text: '' },
-  { at: 118, text: 'Ừm… chắc mình biết rồi.' },
-  { at: 136, text: '' },
-  { at: 149, text: 'Nói ra nhé?' },
-  { at: 161, text: '' }
-];
 let world = null, music = null, started = false, finalizing = false, letterOpen = false;
-let chapterIndex = -1, thoughtIndex = -1, toastTimeout = null, finaleTimeout = null;
+let chapterIndex = -1, toastTimeout = null, finaleTimeout = null;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function toast(message, ms = 5000) {
@@ -82,16 +69,7 @@ function updateNarration(t, force = false) {
     $('scene-subtitle').textContent = stage.description;
     if (!reduced) $('scene-title').animate([{ opacity: .2, transform: 'translateY(12px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 900, easing: 'ease-out' });
   }
-  let k = -1;
-  for (let i = 0; i < thoughts.length; i++) if (t >= thoughts[i].at) k = i;
-  if (k !== thoughtIndex) {
-    thoughtIndex = k;
-    thought.classList.remove('is-visible');
-    if (k >= 0 && thoughts[k].text) {
-      thought.textContent = thoughts[k].text;
-      requestAnimationFrame(() => requestAnimationFrame(() => thought.classList.add('is-visible')));
-    }
-  }
+
 }
 function showFinale() {
   if (!finalizing) return;
@@ -111,7 +89,7 @@ function endStory() {
   if (world) {
     world.setPlaying(false);
     world.finale();
-    finaleTimeout = setTimeout(showFinale, 7400);
+    finaleTimeout = setTimeout(showFinale, 6300);
   } else {
     showFinale();
   }
