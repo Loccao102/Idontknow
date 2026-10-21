@@ -1,0 +1,201 @@
+/* Direction pass: quieter stage, fewer overlays and a letter made for reading.
+   Loaded after styles.css so the original 3D story remains easy to evolve. */
+
+/* Give the fire and the actor the stage. Avoid decorating every corner. */
+.left-rail,
+.thought,
+.top-meta,
+.bottom-caption,
+.panel-bottom,
+.record,
+.tiny-stars,
+.letter-star { display: none !important; }
+
+.topbar {
+  height: 77px;
+  padding-inline: clamp(18px, 3.5vw, 56px);
+  border-bottom-color: rgba(236, 210, 184, .055);
+  background: linear-gradient(180deg, rgba(6, 11, 19, .32), transparent);
+}
+.wordmark { letter-spacing: .16em; }
+.bottom-bar {
+  left: clamp(18px, 3.5vw, 56px);
+  right: clamp(18px, 3.5vw, 56px);
+  justify-content: flex-end;
+}
+.scene-copy {
+  left: clamp(32px, 6vw, 110px);
+  width: min(40vw, 490px);
+  bottom: clamp(95px, 13vh, 145px);
+}
+.scene-copy h1 {
+  font-size: clamp(34px, 3.7vw, 60px);
+  line-height: 1.16;
+}
+.scene-copy p { display: none; }
+.scene-copy .eyebrow { opacity: .75; font-size: 9px; }
+.music-panel {
+  width: clamp(302px, 25vw, 366px);
+  border-color: rgba(249, 226, 207, .12);
+  background: linear-gradient(150deg, rgba(27, 38, 44, .88), rgba(13, 23, 31, .91));
+  box-shadow: 0 20px 65px rgba(0, 0, 0, .3);
+}
+.song-heading { margin: 18px 0 15px; }
+.song-heading h2 { font-size: 25px; }
+.lyric-lines { height: 125px; }
+.lyric-current { font-size: clamp(19px, 1.5vw, 24px); }
+.lyric-caption { font-size: 9px; opacity: .75; }
+.panel-topline { opacity: .78; }
+.intro-card h2 { max-width: 520px; }
+
+/* Everything following this point is deliberately typography-first. */
+.letter-overlay {
+  background: rgba(7, 10, 16, .81);
+  backdrop-filter: blur(11px);
+  -webkit-backdrop-filter: blur(11px);
+  padding: 18px;
+  overscroll-behavior: contain;
+}
+.letter-sheet {
+  width: min(660px, 100%);
+  max-height: min(86dvh, 820px);
+  padding: clamp(30px, 4vw, 51px) clamp(28px, 5vw, 54px) 34px;
+  border: 1px solid #d9c9b7;
+  border-radius: 15px;
+  background: #faf3e8;
+  background-image: none;
+  color: #312822;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, .5);
+  text-align: left;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #baa48c #faf3e8;
+}
+.letter-label {
+  display: block;
+  font-size: 11px;
+  color: #856a55;
+  letter-spacing: .14em;
+  margin-bottom: 23px;
+  padding-right: 42px;
+}
+.letter-sheet h2 {
+  font-size: clamp(32px, 3.3vw, 42px);
+  line-height: 1.2;
+  margin: 0 0 26px;
+  color: #30261f;
+}
+.letter-sheet p {
+  margin: 0 0 19px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(16px, 1.2vw, 18px);
+  font-weight: 400;
+  line-height: 1.8;
+  letter-spacing: 0;
+  color: #38302b;
+  max-width: 64ch;
+  text-wrap: pretty;
+}
+.letter-sheet .letter-highlight {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(31px, 4vw, 42px);
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.35;
+  color: #934e51;
+  text-align: left;
+  padding: 8px 0 7px 18px;
+  margin: 22px 0 24px;
+  border-left: 3px solid #b77472;
+}
+.letter-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  margin: -11px -16px 0 4px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(74, 56, 45, .08);
+  color: #47372d;
+  font-size: 26px;
+  line-height: 1;
+  z-index: 2;
+}
+.letter-close:hover { background: rgba(74, 56, 45, .15); }
+.signature {
+  margin: 30px 0 22px;
+  padding-top: 19px;
+  border-top: 1px solid #d8c8b9;
+  font-size: 17px;
+  line-height: 1.5;
+  color: #655147;
+}
+.letter-again {
+  min-height: 42px;
+  font-size: 12px;
+  color: #70463c;
+  text-underline-offset: 5px;
+}
+
+@media (max-width: 980px) {
+  .scene-copy { left: 28px; width: min(45vw, 440px); }
+  .music-panel { width: min(41vw, 350px); }
+}
+@media (max-width: 700px) {
+  .topbar { height: 63px; padding-inline: 18px; }
+  .scene-copy {
+    top: 80px;
+    bottom: auto;
+    left: 22px;
+    width: calc(100% - 44px);
+  }
+  .scene-copy h1 { font-size: clamp(31px, 8vw, 41px); margin: 9px 0; }
+  .scene-copy .eyebrow { font-size: 8px; }
+  .music-panel {
+    left: 12px;
+    right: 12px;
+    bottom: 57px;
+    width: auto;
+    max-height: min(41dvh, 352px);
+    padding: 14px 16px;
+  }
+  .song-heading { margin: 9px 0 10px; }
+  .song-heading h2 { font-size: 21px; }
+  .lyric-lines { height: 94px; }
+  .lyric-current { font-size: 18px; }
+  .lyric-muted { font-size: 11px; }
+  .bottom-bar { left: 18px; right: 18px; }
+  .letter-overlay { padding: 10px 9px; }
+  .letter-sheet {
+    width: min(100%, 580px);
+    max-height: 91dvh;
+    max-height: 91svh;
+    padding: 23px 23px 26px;
+    border-radius: 14px;
+    border-width: 1px;
+  }
+  .letter-sheet h2 { font-size: 34px; margin-bottom: 18px; }
+  .letter-sheet p { font-size: 16px; line-height: 1.75; margin-bottom: 17px; }
+  .letter-sheet .letter-highlight {
+    font-size: 33px;
+    margin: 22px 0;
+    padding-left: 14px;
+  }
+  .letter-label { font-size: 9px; margin-bottom: 18px; }
+  .letter-close { margin: -8px -7px 0 4px; }
+  .signature { font-size: 16px; }
+}
+@media (max-height: 600px) and (min-width: 701px) {
+  .letter-sheet { max-height: 94dvh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .letter-sheet, .music-panel { animation: none !important; }
+}
