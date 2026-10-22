@@ -51,7 +51,7 @@ export function createMusic(config, handlers = {}) {
     if (i === currentIndex) return;
     currentIndex = i;
     el.before.textContent = i > 0 ? lines[i - 1].words : '';
-    el.current.textContent = i >= 0 ? lines[i].words : 'Có vài điều… vẫn chưa thành lời.';
+    el.current.textContent = i >= 0 ? lines[i].words : 'Có những tình cảm khó nói thành lời.';
     el.after.textContent = i + 1 < lines.length ? lines[i + 1].words : '';
     el.current.animate([
       { opacity: .2, transform: 'translateY(7px)' },
