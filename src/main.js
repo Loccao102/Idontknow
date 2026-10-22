@@ -97,6 +97,9 @@ function endStory() {
 function openLetter() {
   if (!finalizing) return;
   letterOpen = true;
+  // Always open the letter from the beginning, even if it was scrolled last time.
+  const sheet = letter.querySelector('.letter-sheet');
+  if (sheet) sheet.scrollTop = 0;
   letter.classList.add('is-open');
   letter.setAttribute('aria-hidden', 'false');
   $('letter-close').focus();
@@ -128,6 +131,8 @@ music = createMusic(STORY_CONFIG, {
     updateNarration(time);
   },
   onError: message => toast(message, 7000),
+  onCaptionLoaded: count => toast('Đã nạp ' + count + ' dòng phụ đề để xem thử.'),
+  onCaptionReset: () => toast('Đã khôi phục phụ đề mặc định và đồng bộ về 0 giây.', 3200),
   onWait: () => toast('Đang kết nối YouTube. Nếu nhạc chưa phát, nhấn ▶ trên video hoặc trong khung nhạc.')
 });
 
@@ -153,7 +158,28 @@ $('letter-close').addEventListener('click', closeLetter);
 letter.addEventListener('click', event => { if (event.target === letter) closeLetter(); });
 $('restart-btn').addEventListener('click', () => location.reload());
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && letterOpen) closeLetter();
+  if (letterOpen) {
+    if (event.key === 'Escape') { event.preventDefault(); closeLetter(); return; }
+    // Contain keyboard focus inside the letter while its dialog is open.
+    if (event.key === 'Tab') {
+      const focusable = Array.from(letter.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+    return;
+  }
+  const target = event.target;
+  if (target && (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'SUMMARY'].includes(target.tagName) || target.isContentEditable)) return;
+  if (!started || finalizing || !music) return;
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    music.seek(music.currentTime + (event.key === 'ArrowRight' ? 5 : -5));
+  } else if (event.key.toLowerCase() === 'k') {
+    event.preventDefault();
+    music.toggle();
+  }
 });
 $('fullscreen-btn').addEventListener('click', async () => {
   try {
