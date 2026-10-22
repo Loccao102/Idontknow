@@ -64,10 +64,10 @@ export function createMusic(config, handlers = {}) {
       if (!response.ok) throw new Error('Cannot load the .lrc file');
       lines = parseLRC(await response.text());
       if (!lines.length) throw new Error('No timestamped lyric lines');
-      el.caption.textContent = config.lyricsUrl.endsWith('captions.lrc') ? 'Lời tâm sự minh hoạ · thay bằng LRC của bạn sau này' : 'Lời bài hát được đồng bộ theo thời gian';
+      el.caption.textContent = config.lyricsLabel || 'Phụ đề tiếng Việt đồng bộ cùng bài hát';
       drawLyrics(0);
     } catch (error) {
-      el.caption.textContent = 'Chưa có file LRC · lời tâm sự vẫn ở đây';
+      el.caption.textContent = 'Chưa tải được phụ đề · nhạc vẫn phát bình thường';
     }
   }
   function draw() {
