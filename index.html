@@ -61,17 +61,29 @@
         </div>
         <div class="music-transport">
           <button class="transport-btn" id="play-toggle" type="button" aria-label="Phát hoặc tạm dừng nhạc">▶</button>
-          <div class="transport-times"><span id="current-time">0:00</span><div class="track"><div class="track-fill" id="track-fill"></div></div><span id="duration">2:49</span></div>
+          <div class="transport-times"><span id="current-time">0:00</span><div class="track"><div class="track-fill" id="track-fill"></div><input class="seek-slider" type="range" id="seek-slider" min="0" max="1000" step="1" value="0" aria-label="Tua bài hát" title="Kéo để tua nhạc"></div><span id="duration">2:49</span></div>
           <button class="transport-btn transport-replay" id="replay-song" type="button" aria-label="Nghe lại từ đầu">↺</button>
         </div>
         <div class="lyrics-box">
           <div class="lyrics-heading"><span>♪ &nbsp; Ý NGHĨA BÀI HÁT</span><span class="tiny-stars">✧ ✦ ✧</span></div>
           <div class="lyric-lines" aria-live="off">
             <p id="lyric-prev" class="lyric-muted"></p>
-            <p id="lyric-current" class="lyric-current">Có những tình cảm khó nói thành lời.</p>
+            <p id="lyric-original" class="lyric-original" lang="en"></p>
+            <p id="lyric-current" class="lyric-current" lang="vi">Có những tình cảm khó nói thành lời.</p>
             <p id="lyric-next" class="lyric-muted"></p>
           </div>
-          <p class="lyric-caption" id="lyric-caption">Diễn giải nội dung theo từng đoạn · bản dịch sát lời đang chờ file LRC</p>
+          <p class="lyric-caption" id="lyric-caption">Diễn giải ý nghĩa bài hát theo đoạn · chưa phải bản dịch từng câu</p>
+          <details class="subtitle-tools" id="subtitle-tools">
+            <summary>Chỉnh phụ đề <span aria-hidden="true">⌄</span></summary>
+            <div class="subtitle-tools-body">
+              <label for="lrc-upload" class="subtitle-upload">Nạp lời dịch (.lrc)</label>
+              <input id="lrc-upload" type="file" accept=".lrc,.txt,text/plain" aria-label="Nạp tệp phụ đề LRC" />
+              <p class="subtitle-note">Xem thử ngay trên trang, không tải lên máy chủ. Hỗ trợ từng dòng <code>[mm:ss.xx]Bản dịch</code> hoặc <code>[mm:ss.xx]Original || Bản dịch</code>.</p>
+              <label class="offset-caption" for="subtitle-offset">Độ trễ phụ đề <output id="subtitle-offset-value" for="subtitle-offset">0.0 giây</output></label>
+              <input id="subtitle-offset" type="range" min="-5" max="5" step="0.1" value="0" aria-label="Điều chỉnh độ trễ phụ đề" />
+              <div class="subtitle-tools-bottom"><span>+ nghĩa là hiện muộn hơn</span><button id="lyrics-reset" type="button">Khôi phục</button></div>
+            </div>
+          </details>
         </div>
         <div class="panel-bottom"><span>TAKE YOUR TIME, THE NIGHT IS OURS.</span><span>♡</span></div>
       </aside>
