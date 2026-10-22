@@ -14,18 +14,40 @@ export function parseLRC(raw) {
   }
   return result.sort((a, b) => a.time - b.time);
 }
+// A bilingual .lrc cue can use "Original || Tiếng Việt" on the same timestamp.
+// Without a delimiter, the single line is treated as the displayed Vietnamese caption.
+export function splitCaption(words) {
+  const text = String(words || '');
+  const separator = text.indexOf(' || ');
+  return separator === -1
+    ? { original: '', translation: text.trim() }
+    : { original: text.slice(0, separator).trim(), translation: text.slice(separator + 4).trim() };
+}
+export function cueIndexAt(lines, time, delay = 0) {
+  const target = Number(time) - Number(delay || 0) + .08;
+  let low = 0, high = lines.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (lines[mid].time <= target) low = mid + 1;
+    else high = mid;
+  }
+  return low - 1;
+}
 export function createMusic(config, handlers = {}) {
   const $ = id => document.getElementById(id);
   const el = {
     shell: $('youtube-shell'), fallback: $('video-fallback'), play: $('play-toggle'),
-    now: $('current-time'), end: $('duration'), bar: $('track-fill'),
-    before: $('lyric-prev'), current: $('lyric-current'), after: $('lyric-next'),
-    caption: $('lyric-caption')
+    now: $('current-time'), end: $('duration'), bar: $('track-fill'), seek: $('seek-slider'),
+    before: $('lyric-prev'), original: $('lyric-original'),
+    current: $('lyric-current'), after: $('lyric-next'), caption: $('lyric-caption'),
+    upload: $('lrc-upload'), offset: $('subtitle-offset'),
+    offsetValue: $('subtitle-offset-value'), reset: $('lyrics-reset')
   };
   const local = config.mode === 'local';
   let player = null, audio = null, ready = false, playing = false, muted = false;
   let pendingPlay = false, finished = false, duration = config.initialDuration || 169;
-  let position = 0, currentIndex = -999, lines = [];
+  let position = 0, currentIndex = -999, lines = [], defaultLyrics = '';
+  let subtitleDelay = 0, scrubbing = false, pendingSeek = null;
   const fmt = value => {
     const n = Number.isFinite(value) ? Math.floor(Math.max(0, value)) : 0;
     return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
@@ -43,33 +65,69 @@ export function createMusic(config, handlers = {}) {
   }
   function drawLyrics(time) {
     if (!lines.length) return;
-    let i = -1;
-    for (let j = 0; j < lines.length; j++) {
-      if (lines[j].time > time + .08) break;
-      i = j;
-    }
+    const i = cueIndexAt(lines, time, subtitleDelay);
     if (i === currentIndex) return;
     currentIndex = i;
-    el.before.textContent = i > 0 ? lines[i - 1].words : '';
-    el.current.textContent = i >= 0 ? lines[i].words : 'Có những tình cảm khó nói thành lời.';
-    el.after.textContent = i + 1 < lines.length ? lines[i + 1].words : '';
-    el.current.animate([
-      { opacity: .2, transform: 'translateY(7px)' },
-      { opacity: 1, transform: 'translateY(0)' }
-    ], { duration: 430, easing: 'ease-out' });
+    const previous = i > 0 ? splitCaption(lines[i - 1].words) : null;
+    const current = i >= 0 ? splitCaption(lines[i].words) : null;
+    const next = i + 1 < lines.length ? splitCaption(lines[i + 1].words) : null;
+    el.before.textContent = previous ? previous.translation : '';
+    el.original.textContent = current ? current.original : '';
+    el.current.textContent = current ? current.translation : 'Có những tình cảm khó nói thành lời.';
+    el.after.textContent = next ? next.translation : '';
+    // Only animate when the spoken line changes; avoid flicker during a seek.
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches && typeof el.current.animate === 'function') {
+      el.current.animate([
+        { opacity: .35, transform: 'translateY(5px)' },
+        { opacity: 1, transform: 'translateY(0)' }
+      ], { duration: 300, easing: 'ease-out' });
+    }
+  }
+  function installLyrics(raw, label) {
+    if (typeof raw !== 'string' || raw.length > 300000) throw new Error('File phụ đề quá lớn.');
+    const parsed = parseLRC(raw);
+    if (!parsed.length) throw new Error('Không tìm thấy dòng có timestamp [mm:ss.xx] trong file LRC.');
+    lines = parsed.slice(0, 2000);
+    currentIndex = -999;
+    el.caption.textContent = label;
+    drawLyrics(position);
+    return lines.length;
   }
   async function loadLyrics() {
     try {
       const response = await fetch(config.lyricsUrl, { cache: 'no-cache' });
-      if (!response.ok) throw new Error('Cannot load the .lrc file');
-      lines = parseLRC(await response.text());
-      if (!lines.length) throw new Error('No timestamped lyric lines');
-      el.caption.textContent = config.lyricsLabel || 'Phụ đề tiếng Việt đồng bộ cùng bài hát';
-      drawLyrics(0);
+      if (!response.ok) throw new Error('Cannot load .lrc');
+      defaultLyrics = await response.text();
+      installLyrics(defaultLyrics, config.lyricsLabel || 'Phụ đề tiếng Việt đồng bộ cùng bài hát');
     } catch (error) {
       el.caption.textContent = 'Chưa tải được phụ đề · nhạc vẫn phát bình thường';
     }
   }
+  function setSubtitleDelay(seconds) {
+    subtitleDelay = Math.max(-5, Math.min(5, Number(seconds) || 0));
+    el.offset.value = String(subtitleDelay);
+    el.offsetValue.textContent = (subtitleDelay > 0 ? '+' : '') + subtitleDelay.toFixed(1) + ' giây';
+    currentIndex = -999;
+    drawLyrics(position);
+  }
+  el.upload.addEventListener('change', async () => {
+    const file = el.upload.files && el.upload.files[0];
+    if (!file) return;
+    try {
+      if (file.size > 300000) throw new Error('Chỉ hỗ trợ file LRC dưới 300 KB.');
+      const count = installLyrics(await file.text(), 'Đang xem thử: ' + file.name + ' · ' + 'phụ đề cục bộ');
+      notify('onCaptionLoaded', count);
+    } catch (error) {
+      notify('onError', error.message || 'Không đọc được file LRC.');
+    }
+    el.upload.value = '';
+  });
+  el.offset.addEventListener('input', () => setSubtitleDelay(el.offset.value));
+  el.reset.addEventListener('click', () => {
+    if (defaultLyrics) installLyrics(defaultLyrics, config.lyricsLabel || 'Phụ đề mặc định');
+    setSubtitleDelay(0);
+    notify('onCaptionReset');
+  });
   function draw() {
     if (local && audio) {
       position = Number.isFinite(audio.currentTime) ? audio.currentTime : position;
@@ -84,7 +142,11 @@ export function createMusic(config, handlers = {}) {
     }
     el.now.textContent = fmt(position);
     el.end.textContent = fmt(duration);
-    el.bar.style.width = Math.min(100, position / Math.max(1, duration) * 100) + '%';
+    if (!scrubbing) {
+      const fraction = Math.min(1, Math.max(0, position / Math.max(1, duration)));
+      el.bar.style.width = (fraction * 100) + '%';
+      el.seek.value = String(Math.round(fraction * 1000));
+    }
     el.play.textContent = playing ? '❚❚' : '▶';
     el.play.setAttribute('aria-label', playing ? 'Tạm dừng nhạc' : 'Phát nhạc');
     drawLyrics(position);
@@ -97,7 +159,11 @@ export function createMusic(config, handlers = {}) {
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
-    audio.addEventListener('loadedmetadata', () => { duration = audio.duration; ready = true; notify('onReady'); });
+    audio.addEventListener('loadedmetadata', () => {
+      duration = audio.duration; ready = true;
+      if (pendingSeek !== null) { audio.currentTime = pendingSeek; pendingSeek = null; }
+      notify('onReady');
+    });
     audio.addEventListener('error', () => notify('onError', 'Không tải được audio. Hãy kiểm tra đường dẫn trong src/config.js.'));
     el.shell.innerHTML = '<div class="local-audio-art"><span>♡</span><small>FROM THE START · LOCAL AUDIO</small></div>';
     el.shell.classList.add('is-ready', 'is-local');
@@ -112,6 +178,8 @@ export function createMusic(config, handlers = {}) {
         events: {
           onReady: () => {
             ready = true; el.shell.classList.add('is-ready'); notify('onReady');
+            if (pendingSeek !== null) { try { player.seekTo(pendingSeek, true); } catch (e) {} pendingSeek = null; }
+            if (muted) { try { player.mute(); } catch (e) {} }
             if (pendingPlay) { pendingPlay = false; try { player.playVideo(); } catch (e) { notify('onError', 'Hãy nhấn Play trên video YouTube.'); } }
           },
           onStateChange: event => {
@@ -156,7 +224,31 @@ export function createMusic(config, handlers = {}) {
     if (local && audio) audio.pause();
     else if (player && ready) try { player.pauseVideo(); } catch (e) {}
   }
+  function seek(seconds) {
+    if (!Number.isFinite(seconds)) return;
+    const next = Math.max(0, Math.min(seconds, duration));
+    position = next;
+    currentIndex = -999;
+    if (local && audio) {
+      try { audio.currentTime = next; } catch (error) { notify('onError', 'Không thể tua audio.'); }
+    } else if (player && ready) {
+      try { player.seekTo(next, true); } catch (error) { notify('onError', 'Không thể tua YouTube.'); }
+    } else pendingSeek = next;
+    drawLyrics(next);
+    notify('onTick', next, duration, playing);
+  }
   function toggle() { if (playing) pause(); else play(); }
+  el.seek.addEventListener('input', () => {
+    scrubbing = true;
+    const seconds = Number(el.seek.value) / 1000 * duration;
+    el.now.textContent = fmt(seconds);
+    el.bar.style.width = (Number(el.seek.value) / 10) + '%';
+  });
+  el.seek.addEventListener('change', () => {
+    const seconds = Number(el.seek.value) / 1000 * duration;
+    scrubbing = false;
+    seek(seconds);
+  });
   function replay() {
     finished = false; position = 0; currentIndex = -999;
     if (local && audio) { audio.currentTime = 0; play(); }
@@ -175,7 +267,7 @@ export function createMusic(config, handlers = {}) {
   const interval = setInterval(draw, 240);
   draw();
   return {
-    play, pause, toggle, replay, setMuted,
+    play, pause, toggle, replay, seek, setMuted, setSubtitleDelay, installLyrics,
     get playing() { return playing; },
     get ready() { return ready; },
     get muted() { return muted; },
