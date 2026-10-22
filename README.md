@@ -43,7 +43,7 @@ The side captions currently contain **Vietnamese section-by-section interpretati
 The source repo is public. Do not place private information or surprises you don't want indexed into this repo, even though the HTML includes a noindex directive.
 
 ## Cinematic pacing and review
-The camera is directed by the soundtrack playback time: pausing and seeking changes the shot rather than the scene silently continuing. Shots drift around the campfire, then move towards the boy, hold on the heartbeat, and widen before the finale. The last ~6.2 seconds have two different beats: first the camera approaches, then the boy gradually lifts his head to face the viewer, and then the envelope appears. Excess background and floating-heart decorations have been removed in the cleaner cinematic pass.
+The camera is directed by the soundtrack playback time: pausing and seeking changes the shot rather than the scene silently continuing. The camera follows three deliberate beats, progressing slowly from a wide view towards the boy before a final close-up. The last ~5.8 seconds have two different beats: first the camera approaches, then the boy gradually lifts his head to face the viewer, and then the envelope appears. Excess background and floating-heart decorations have been removed in the cleaner cinematic pass.
 
 The boy is intentionally stylized and made of procedural 3D geometry, not a photorealistic human model. We still recommend visual QA in a desktop and mobile browser before sharing. GitHub Actions validates JavaScript syntax, caption parsing, camera interpolation, and continuity. YouTube may reject auto-play and/or embedding on some browsers; the viewer can use the embedded video controls, open the video on YouTube, or choose the manual letter reveal.
 
@@ -60,3 +60,25 @@ Share the original lyrics as text, or provide your own translated `.lrc`. For ti
 ```
 
 Do not place an MP3 or copyrighted text in this public repository unless you have the appropriate rights. The translation text is read directly from the LRC file and rendered with `textContent` for safety; the current file intentionally contains original section summaries rather than reproducing the song lyric lines.
+
+## v1.4 — Controls, captions and motion
+
+### Improved sound and subtitles
+- The music timeline can now be dragged or used with the keyboard to seek YouTube (or local audio) without leaving the scene. The current shot and captions follow the same playback position.
+- Open **Chỉnh phụ đề** below the captions to preview a timestamped .lrc or .txt file **only in your current browser session**. The selected file is not uploaded, stored on a server, or committed to the repository. It disappears on reload.
+- Caption formats:
+  - `[00:15.50]Bản dịch tiếng Việt`
+  - `[00:15.50]Original line || Bản dịch tiếng Việt` — original line above the Vietnamese one.
+- Adjust **Độ trễ phụ đề** between -5 and +5 seconds (positive means captions appear later), then **Khôi phục** to reset to the packaged thematic subtitles. This adjustment is also session-only.
+- Until a translation is supplied, the bundled `assets/captions.lrc` remains an explicitly labeled **interpretation of the song by sections**, not a faithful full translation. To publish a permanent lyric track, replace that file and update `lyricsLabel` in `src/config.js`.
+
+### Motion, performance and letter
+- A right-forearm pivot enables a small acting gesture rather than fixed hands. The scene is still an intentionally stylized procedural 3D model, not motion capture or a production character rig.
+- Resolved a runtime error when a mobile device is rotated or a desktop browser is resized; 3D animation also pauses in hidden tabs to save battery.
+- The letter reopens at the top and keeps keyboard focus inside its dialog; Escape closes it.
+- Keyboard shortcuts when the story is active: **K** toggles music; **Left/Right** seeks ±5 seconds (not while using inputs).
+- The sparse three-beat camera approach, neutral face and reduced background particle count from the previous pass are kept.
+
+### Useful local verification
+Run `npm test` to execute the timestamp, subtitle import, camera continuity and UI structure tests. GitHub Actions checks syntax and runs all tests whenever you push.
+
