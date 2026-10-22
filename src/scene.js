@@ -251,10 +251,14 @@ export function createScene(canvas, options = {}) {
   ball(chest, jacket, 0, .47, -.24, .28, .27, .25);
   between(chest, [-.28, .33, .0], [-.46, -.16, .36], .15, jacket);
   between(chest, [.28, .33, .0], [.46, -.16, .36], .15, jacket);
-  const sleeveLeft = between(chest, [-.46, -.16, .36], [-.29, -.43, .77], .125, jacket);
-  const sleeveRight = between(chest, [.46, -.16, .36], [.29, -.43, .77], .125, jacket);
+  // A pivoted forearm lets the actor make one restrained movement instead of floating rigidly.
+  between(chest, [-.46, -.16, .36], [-.29, -.43, .77], .125, jacket);
   ball(chest, skin, -.29, -.43, .8, .115, .1, .13);
-  ball(chest, skin, .29, -.43, .8, .115, .1, .13);
+  const rightForearm = new THREE.Group();
+  rightForearm.position.set(.46, -.16, .36);
+  chest.add(rightForearm);
+  between(rightForearm, [0, 0, 0], [-.17, -.27, .41], .125, jacket);
+  ball(rightForearm, skin, -.17, -.27, .44, .115, .1, .13);
   for (const sign of [-1, 1]) {
     const x = sign * .22;
     between(boy, [x, .98, .1], [x * 1.48, .67, .8], .19, trouser);
@@ -378,6 +382,12 @@ export function createScene(canvas, options = {}) {
     headPivot.position.y = 2.13 + .026 * e + Math.sin(t * 1.55) * .008 * movement;
     boy.rotation.y = -.02 - .02 * e;
     scarfTail.rotation.z = -.15 + Math.sin(t * 1.8) * .018 * movement;
+    // One quiet, music-led gesture: he draws his hand nearer while thinking, then relaxes.
+    const rise = Math.max(0, Math.min(1, (storyTime - 65) / 24));
+    const fall = Math.max(0, Math.min(1, (145 - storyTime) / 30));
+    const gesture = rise * rise * (3 - 2 * rise) * fall * fall * (3 - 2 * fall) * (1 - e);
+    rightForearm.rotation.x = -.32 * gesture + Math.sin(t * 1.4) * .008 * movement;
+    rightForearm.rotation.z = -.26 * gesture;
     // Blinks become less frequent during the final moment.
     const blinkWave = Math.pow(Math.max(0, Math.sin(t * .77 + .25)), 44) * (1 - .72 * e);
     for (const eye of eyeMeshes) eye.scale.y = .023 * Math.max(.35, 1 - blinkWave * .6);
@@ -410,10 +420,20 @@ export function createScene(canvas, options = {}) {
     camera.aspect = w / h;
     camera.fov = cameraPoseAt(storyTime, mobileViewport).fov;
     camera.updateProjectionMatrix();
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobile ? 1.35 : 1.7));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobileViewport ? 1.35 : 1.7));
     renderer.setSize(w, h, false);
   }
   addEventListener('resize', resize);
+  // Save battery and prevent animation work in background tabs.
+  function visibilityChange() {
+    if (!active) return;
+    if (document.hidden) renderer.setAnimationLoop(null);
+    else {
+      prevFrameTime = clock.getElapsedTime();
+      renderer.setAnimationLoop(update);
+    }
+  }
+  document.addEventListener('visibilitychange', visibilityChange);
   return {
     setPlaying(value) { playing = !!value; },
     setMusicTime(seconds) { if (Number.isFinite(seconds)) storyTime = Math.max(0, seconds); },
@@ -425,6 +445,6 @@ export function createScene(canvas, options = {}) {
       }
     },
     reset() { finaleStart = 0; finaleOrigin = null; finaleDone = false; playing = false; storyTime = 0; },
-    dispose() { active = false; renderer.setAnimationLoop(null); removeEventListener('resize', resize); renderer.dispose(); }
+    dispose() { active = false; renderer.setAnimationLoop(null); removeEventListener('resize', resize); document.removeEventListener('visibilitychange', visibilityChange); renderer.dispose(); }
   };
 }
